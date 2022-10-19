@@ -26,7 +26,7 @@ model.add(k.layers.Dropout(0.5))
 model.add(k.layers.BatchNormalization())
 model.add(k.layers.Dense(37, activation='softmax'))
 
-model = tf.keras.models.load_model('Model_Resnet50_placas.h5')
+model = tf.keras.models.load_model('Model_Resnet50_corales.h5')
 model.compile(loss='categorical_crossentropy',optimizer=k.optimizers.RMSprop(lr=2e-5),metrics=['accuracy'])
 
 
@@ -48,13 +48,18 @@ def convertImage(image):
     imagenBlanca = cv2.cvtColor(imagenBlanca, cv2.COLOR_GRAY2RGB)
     return imagenBlanca
 
-def ocr(imagen):
+def ocr(imagen,version):
     text= ""
     indicePredicho=0
-    background=[]
-    background = convertImage(imagen)
-    indicePredicho = (model.predict( np.array( [background,] )  )).argmax(axis=1)
-    text = dictEtiquetas[int(indicePredicho)]
+    
+    if (version==1):
+        text = pytesseract.image_to_string(imagen, lang='eng', config='--psm 6 -c tessedit_char_whitelist=ABCDEFGHIjJKLMNOPQRSTUVWXYZ-1234567890')
+    else:
+        if (version==2):
+            background=[]
+            background = convertImage(imagen)
+            indicePredicho = (model.predict( np.array( [background,] )  )).argmax(axis=1)
+            text = dictEtiquetas[int(indicePredicho)]
     return text
 
 def preprocesamientoModel(ruta):
@@ -104,7 +109,7 @@ def preprocesamientoModel(ruta):
         
     return placa
 
-def segmentadoModel(file2):
+def segmentadoModel(file2,version):
     dimensions = (162,78)
     image = cv2.resize(file2,dimensions)
     cnts = []
@@ -132,7 +137,7 @@ def segmentadoModel(file2):
                 #text = ""  #No pertenece al código original
                 if placa is None:
                     continue  
-                text = ocr(placa)
+                text = ocr(placa,version)
                 lista.append(str(text))
                 print('Caracter Identificado: ',text)
     text="".join(lista)
